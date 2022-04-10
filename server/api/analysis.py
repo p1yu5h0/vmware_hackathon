@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify,make_response
 from sklearn.preprocessing import LabelEncoder
 import pandas as pd
 import pickle
@@ -17,15 +17,19 @@ encoder = joblib.load('./asset/labelEncoder.joblib')
 
 def readFile():
     data = pd.read_json('./asset/FinalData.json')
+    new = data["OEM"].str.split("-", n=1, expand=True)
+    data["OEM"] = new[0]
+    data.dropna()
     return data
 
 
 def mapping():
-    data = pd.read_json('./asset/FinalData.json')
+    data = readFile()
     product = data['Product Name'].unique().tolist()
     category = data['Category'].unique().tolist()
     region = data['Region'].unique().tolist()
     country = data['Shipping Country'].unique().tolist()
+    om=data['OEM'].unique().tolist()
     data['Product Name'] = encoder.fit_transform(data['Product Name'])
     data['OEM'] = encoder.fit_transform(data['OEM'])
     data['Shipping Country'] = encoder.fit_transform(data['Shipping Country'])
@@ -35,11 +39,13 @@ def mapping():
     category2 = data['Category'].unique().tolist()
     region2 = data['Region'].unique().tolist()
     country2 = data['Shipping Country'].unique().tolist()
+    om2=data['OEM'].unique().tolist()
     pro = dict(zip(product, product2))
     reg = dict(zip(region, region2))
     cat = dict(zip(category, category2))
     cont = dict(zip(country, country2))
-    return {"Product Name": pro, "Region": reg, "Category": cat, "Country": cont}
+    oem = dict(zip(om, om2))
+    return {"Product Name": pro, "Region": reg, "Category": cat, "Country": cont,"OEM":oem}
 
 
 def Encoding():
@@ -76,6 +82,7 @@ def monthvsSales():
 
 def topTenAssetSales():
     data = Prediction()
+    data = pd.DataFrame(data)
     prod_sales = pd.DataFrame(data.groupby('Product Name').sum()['Total Sales'])
     prod_sales.sort_values(by=['Total Sales'], inplace=True, ascending=False)
     top_ten_prod = prod_sales[:]
@@ -136,106 +143,135 @@ def countryWiseSale():
     return {"Region Wise Sales": asset.to_dict()}
 
 
-def CatRegionWiseQuantity():
+def OemWiseQuantity():
     data = Prediction()
     data = pd.DataFrame(data)
-    grouped_multiple = data.groupby(['Category', 'Region']).agg({'Ordered Qty': ['sum']})
-    return dict(grouped_multiple)
+    asset = pd.DataFrame(data.groupby('OEM').sum()['Ordered Qty'])
+    return {"OEM Wise Quantity": asset.to_dict()}
 
-
-# @analysis.route('/predictQuantity', methods=['GET', 'POST'])
-# def handler():
-#     if request.method == 'GET':
-#         prd = Prediction()
-#         return jsonify({'data': prd})
+def OemWiseSale():
+    data = Prediction()
+    data = pd.DataFrame(data)
+    asset = pd.DataFrame(data.groupby('OEM').sum()['Total Sales'])
+    return {"OEM Wise Sale": asset.to_dict()}
 
 
 @analysis.route('/file', methods=['GET', 'POST'])
 def json_example():
-    try:
-        d = json.loads(request.form['data'])
-        return 'Recieved'
-    except:
-        print('ERROR')
-        return 'Error'
+    if request.method=='POST' :
+        try:
+            d = json.loads(request.form['data'])
+            file_list.append(d)
+            return 'Recieved'
+        except:
+            print('ERROR')
+            return 'Error'
 
 
 @analysis.route('/datevsale', methods=['GET', 'POST'])
 def datevsale():
     if request.method == 'GET':
         data = monthvsSales()  # Returns Date vs Sales
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 
 @analysis.route('/toptenprod', methods=['GET', 'POST'])
 def toptenproSales():
     if request.method == 'GET':
         data = topTenAssetSales()  # Returns Date vs Sales
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 
 @analysis.route('/toptenprodQuan', methods=['GET', 'POST'])
 def toptenproQuantity():
     if request.method == 'GET':
         data = topTenAssetQunatity()
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 
 @analysis.route('/decodedata', methods=['GET', 'POST'])
 def decodedData():
     if request.method == 'GET':
         data = mapping()
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 
 @analysis.route('/assetQuantity', methods=['GET', 'POST'])
 def assetQuantity1():
     if request.method == 'GET':
         data = assetQuantity21()  # Returns Date vs Sales
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 
 @analysis.route('/regionWiseAssetQuantity', methods=['GET', 'POST'])
 def RegionassetQuantity():
     if request.method == 'GET':
         data = RegionWiseQuantiy()
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 
 @analysis.route('/CountryWiseAssetQuantity', methods=['GET', 'POST'])
 def CountryassetQuantity():
     if request.method == 'GET':
         data = countryWiseQuantity()
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 
 @analysis.route('/assetWiseSales', methods=['GET', 'POST'])
 def assetwiseSales():
     if request.method == 'GET':
         data = assetWiseSale()
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 
 @analysis.route('/regionWiseSales', methods=['GET', 'POST'])
 def regoionwiseSales():
     if request.method == 'GET':
         data = regionWiseSale()
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 
 @analysis.route('/countryWiseSales', methods=['GET', 'POST'])
 def countrywiseSales():
     if request.method == 'GET':
         data = countryWiseSale()
-        return jsonify({'data': data})
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
-@analysis.route('/categoryRegionwiseQuantity', methods=['GET', 'POST'])
-def categoryRegionwiseQuantity():
+
+@analysis.route('/oemWiseQuantity', methods=['GET', 'POST'])
+def oemWiseQuantity():
     if request.method == 'GET':
-        data = CatRegionWiseQuantity()
-        arr=[]
-        for key,value in data.items() :
-            a = {"Accessory":key[0],"Region":key[1],"Quantity":value}
-            arr.append(a)
-            print(arr)
-        return jsonify({'data': arr})
+        data = OemWiseQuantity()
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+
+
+@analysis.route('/oemWiseSale', methods=['GET', 'POST'])
+def oemWiseSale():
+    if request.method == 'GET':
+        data = OemWiseSale()
+        resp = make_response(jsonify({'data': data}))
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+
