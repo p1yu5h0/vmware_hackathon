@@ -5,6 +5,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import joblib
+import json
 
 analysis = Blueprint('analysis', __name__)
 
@@ -15,10 +16,29 @@ encoder = joblib.load('./asset/labelEncoder.joblib')
 
 def readFile():
     data = pd.read_json('./asset/FinalData.json')
-    # data = pd.read_csv('blob:http://localhost:3000/a4497676-d729-43c4-8d23-4378bbeff1e4')
-    # Encoding(data)
     return data
 
+
+def mapping():
+    data = pd.read_json('./asset/FinalData.json')
+    product = data['Product Name'].unique().tolist()
+    category = data['Category'].unique().tolist()
+    region = data['Region'].unique().tolist()
+    country = data['Shipping Country'].unique().tolist()
+    data['Product Name'] = encoder.fit_transform(data['Product Name'])
+    data['OEM'] = encoder.fit_transform(data['OEM'])
+    data['Shipping Country'] = encoder.fit_transform(data['Shipping Country'])
+    data['Region'] = encoder.fit_transform(data['Region'])
+    data['Category'] = encoder.fit_transform(data['Category'])
+    product2 = data['Product Name'].unique().tolist()
+    category2 = data['Category'].unique().tolist()
+    region2 = data['Region'].unique().tolist()
+    country2 = data['Shipping Country'].unique().tolist()
+    pro = dict(zip(product,product2))
+    reg = dict(zip(region,region2))
+    cat = dict(zip(category,category2))
+    cont =dict(zip(country,country2))
+    return {"Product Name":pro,"Region":reg,"Category":cat,"Country":cont}
 
 def Encoding():
     data = readFile()
@@ -30,11 +50,13 @@ def Encoding():
     return data
 
 
+
 def Prediction():
     data=Encoding()
     X1 = data.drop(columns=['Ordered Qty', 'Purchase Date'], axis=1)
     prd = model.predict(X1).tolist()
-    return {"Predicted Quantity": prd}
+    data['Ordered Qty'] = prd
+    return data.to_dict()
 
 def datevSales():
     data = Encoding()
@@ -51,15 +73,30 @@ def topTenAssetSales():
     data=readFile()
     prod_sales = pd.DataFrame(data.groupby('Product Name').sum()['Row Total'])
     prod_sales.sort_values(by=['Row Total'], inplace=True, ascending=False)
-    top_ten_prod = prod_sales[:10]
+    top_ten_prod = prod_sales[:]
     return top_ten_prod.to_dict()
 
 def topTenAssetQunatity():
-
+    data = Prediction()
+    data = pd.DataFrame(data)
     prod_sales = pd.DataFrame(data.groupby('Product Name').sum()['Ordered Qty'])
     prod_sales.sort_values(by=['Ordered Qty'], inplace=True, ascending=False)
-    top_ten_prod = prod_sales[:10]
-    top_ten_prod
+    top_ten_prod = prod_sales[:]
+    return top_ten_prod.to_dict()
+
+def RegionWiseSale():
+    data = Prediction()
+
+
+def assetQuantity21():
+    data = Prediction()
+    data = pd.DataFrame(data)
+    asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty'])
+    # ab = data.groupby(data['Category'])['Ordered Qty'].sum()
+    # asset.sort_values(by=['Ordered Qty'], inplace=True, ascending=False)
+    # asset = asset[:10]
+
+    return {"Asset Quantity": asset.to_dict()}
 
 @analysis.route('/predictQuantity', methods=['GET', 'POST'])
 def handler():
@@ -93,9 +130,21 @@ def toptenproSales():
 
 
 
-# @analysis.route('/toptenprod', methods=['GET', 'POST'])
-# def toptenproQuantity():
-#     if request.method == 'GET':
-#         data = topTenAssetQunatity()    #Returns Date vs Sales
-#         return jsonify({'data': data})
+@analysis.route('/toptenprodQuan', methods=['GET', 'POST'])
+def toptenproQuantity():
+    if request.method == 'GET':
+        data = topTenAssetQunatity()
+        return jsonify({'data': data})
+
+@analysis.route('/decodedata', methods=['GET', 'POST'])
+def decodedData():
+    if request.method == 'GET':
+        data = mapping()
+        return jsonify({'data': data})
+
+@analysis.route('/assetQuantity', methods=['GET', 'POST'])
+def assetQuantity1():
+    if request.method == 'GET':
+        data = assetQuantity21()    #Returns Date vs Sales
+        return jsonify({'data': data})
 
