@@ -15,16 +15,16 @@ encoder = LabelEncoder()
 encoder = joblib.load('./asset/labelEncoder.joblib')
 
 
-def readFile():
-    data = pd.read_json('./asset/FinalData.json')
+def readFile(file_link):
+    data = pd.read_csv(file_link)
     new = data["OEM"].str.split("-", n=1, expand=True)
     data["OEM"] = new[0]
     data.dropna()
     return data
 
 
-def mapping():
-    data = readFile()
+def mapping(file_link):
+    data = readFile(file_link)
     product = data['Product Name'].unique().tolist()
     category = data['Category'].unique().tolist()
     region = data['Region'].unique().tolist()
@@ -48,8 +48,8 @@ def mapping():
     return {"Product Name": pro, "Region": reg, "Category": cat, "Country": cont,"OEM":oem}
 
 
-def Encoding():
-    data = readFile()
+def Encoding(file_link):
+    data = readFile(file_link)
     data['Product Name'] = encoder.fit_transform(data['Product Name'])
     data['OEM'] = encoder.fit_transform(data['OEM'])
     data['Shipping Country'] = encoder.fit_transform(data['Shipping Country'])
@@ -58,8 +58,8 @@ def Encoding():
     return data
 
 
-def Prediction():
-    data = Encoding()
+def Prediction(file_link):
+    data = Encoding(file_link)
     x = data.drop(columns=['Ordered Qty', 'Purchase Date'], axis=1)
     prd = model.predict(x).tolist()
     data['Ordered Qty'] = prd
@@ -67,8 +67,8 @@ def Prediction():
     return data.to_dict()
 
 
-def monthvsSales():
-    data = Prediction()
+def monthvsSales(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     data['Purchase Date'] = pd.to_datetime(data['Purchase Date'])
     month_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().sort_values()
@@ -80,8 +80,8 @@ def monthvsSales():
     return msale.to_dict()
 
 
-def topTenAssetSales():
-    data = Prediction()
+def topTenAssetSales(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     prod_sales = pd.DataFrame(data.groupby('Product Name').sum()['Total Sales'])
     prod_sales.sort_values(by=['Total Sales'], inplace=True, ascending=False)
@@ -89,8 +89,8 @@ def topTenAssetSales():
     return top_ten_prod.to_dict()
 
 
-def topTenAssetQunatity():
-    data = Prediction()
+def topTenAssetQunatity(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     prod_sales = pd.DataFrame(data.groupby('Product Name').sum()['Ordered Qty'])
     prod_sales.sort_values(by=['Ordered Qty'], inplace=True, ascending=False)
@@ -98,15 +98,15 @@ def topTenAssetQunatity():
     return top_ten_prod.to_dict()
 
 
-def RegionWiseQuantiy():
-    data = Prediction()
+def RegionWiseQuantiy(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Region').sum()['Ordered Qty'])
     return {"Region Asset Quantity": asset.to_dict()}
 
 
-def assetQuantity21():
-    data = Prediction()
+def assetQuantity21(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty'])
     # ab = data.groupby(data['Category'])['Ordered Qty'].sum()
@@ -115,42 +115,42 @@ def assetQuantity21():
     return {"Asset Quantity": asset.to_dict()}
 
 
-def countryWiseQuantity():
-    data = Prediction()
+def countryWiseQuantity(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Shipping Country').sum()['Ordered Qty'])
     return {"Country Asset Quantity": asset.to_dict()}
 
 
-def assetWiseSale():
-    data = Prediction()
+def assetWiseSale(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Category').sum()['Total Sales'])
     return {"Asset Wise Sales": asset.to_dict()}
 
 
-def regionWiseSale():
-    data = Prediction()
+def regionWiseSale(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Region').sum()['Total Sales'])
     return {"Region Wise Sales": asset.to_dict()}
 
 
-def countryWiseSale():
-    data = Prediction()
+def countryWiseSale(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Shipping Country').sum()['Total Sales'])
     return {"Region Wise Sales": asset.to_dict()}
 
 
-def OemWiseQuantity():
-    data = Prediction()
+def OemWiseQuantity(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('OEM').sum()['Ordered Qty'])
     return {"OEM Wise Quantity": asset.to_dict()}
 
-def OemWiseSale():
-    data = Prediction()
+def OemWiseSale(file_link):
+    data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('OEM').sum()['Total Sales'])
     return {"OEM Wise Sale": asset.to_dict()}
@@ -158,10 +158,11 @@ def OemWiseSale():
 
 @analysis.route('/file', methods=['GET', 'POST'])
 def json_example():
-    if request.method=='POST' :
+    if request.method=='POST':
         try:
-            d = json.loads(request.form['data'])
-            file_list.append(d)
+            data = (request.form['link'])
+            # file_list.append(d)
+            rf= readFile(data)
             return 'Recieved'
         except:
             print('ERROR')
@@ -170,8 +171,9 @@ def json_example():
 
 @analysis.route('/datevsale', methods=['GET', 'POST'])
 def datevsale():
-    if request.method == 'GET':
-        data = monthvsSales()  # Returns Date vs Sales
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = monthvsSales(link_file)  # Returns Date vs Sales
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -179,8 +181,9 @@ def datevsale():
 
 @analysis.route('/toptenprod', methods=['GET', 'POST'])
 def toptenproSales():
-    if request.method == 'GET':
-        data = topTenAssetSales()  # Returns Date vs Sales
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = topTenAssetSales(link_file)  # Returns Date vs Sales
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -188,8 +191,9 @@ def toptenproSales():
 
 @analysis.route('/toptenprodQuan', methods=['GET', 'POST'])
 def toptenproQuantity():
-    if request.method == 'GET':
-        data = topTenAssetQunatity()
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = topTenAssetQunatity(link_file)
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -197,8 +201,9 @@ def toptenproQuantity():
 
 @analysis.route('/decodedata', methods=['GET', 'POST'])
 def decodedData():
-    if request.method == 'GET':
-        data = mapping()
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = mapping(link_file)
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -206,8 +211,9 @@ def decodedData():
 
 @analysis.route('/assetQuantity', methods=['GET', 'POST'])
 def assetQuantity1():
-    if request.method == 'GET':
-        data = assetQuantity21()  # Returns Date vs Sales
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = assetQuantity21(link_file)  # Returns Date vs Sales
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -215,8 +221,9 @@ def assetQuantity1():
 
 @analysis.route('/regionWiseAssetQuantity', methods=['GET', 'POST'])
 def RegionassetQuantity():
-    if request.method == 'GET':
-        data = RegionWiseQuantiy()
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = RegionWiseQuantiy(link_file)
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -224,8 +231,9 @@ def RegionassetQuantity():
 
 @analysis.route('/CountryWiseAssetQuantity', methods=['GET', 'POST'])
 def CountryassetQuantity():
-    if request.method == 'GET':
-        data = countryWiseQuantity()
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = countryWiseQuantity(link_file)
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -233,8 +241,9 @@ def CountryassetQuantity():
 
 @analysis.route('/assetWiseSales', methods=['GET', 'POST'])
 def assetwiseSales():
-    if request.method == 'GET':
-        data = assetWiseSale()
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = assetWiseSale(link_file)
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -242,8 +251,9 @@ def assetwiseSales():
 
 @analysis.route('/regionWiseSales', methods=['GET', 'POST'])
 def regoionwiseSales():
-    if request.method == 'GET':
-        data = regionWiseSale()
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = regionWiseSale(link_file)
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -251,8 +261,9 @@ def regoionwiseSales():
 
 @analysis.route('/countryWiseSales', methods=['GET', 'POST'])
 def countrywiseSales():
-    if request.method == 'GET':
-        data = countryWiseSale()
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = countryWiseSale(link_file)
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -260,8 +271,9 @@ def countrywiseSales():
 
 @analysis.route('/oemWiseQuantity', methods=['GET', 'POST'])
 def oemWiseQuantity():
-    if request.method == 'GET':
-        data = OemWiseQuantity()
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = OemWiseQuantity(link_file)
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
@@ -269,9 +281,9 @@ def oemWiseQuantity():
 
 @analysis.route('/oemWiseSale', methods=['GET', 'POST'])
 def oemWiseSale():
-    if request.method == 'GET':
-        data = OemWiseSale()
+    if request.method == 'POST':
+        link_file = (request.form['link'])
+        data = OemWiseSale(link_file)
         resp = make_response(jsonify({'data': data}))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
-
