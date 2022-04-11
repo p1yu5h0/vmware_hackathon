@@ -15,6 +15,8 @@ complete analysis and predicted data through graphs.</p>
 
 <hr/>
 
+Note: For now, Filters have only dummy data, they are not implemented due to time constraints.
+
 <h2>Instructions to Run</h2>
 <p>Step 1 : Clone this repository https://github.com/p1yu5h0/vmware_hackathon</p>
 <p>Step 2 : Navigate to Server Directory and run the flask server (on Localhost:5000)</p>
