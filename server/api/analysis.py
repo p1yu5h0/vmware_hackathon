@@ -87,12 +87,12 @@ def topTenAssetSales(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     prod_sales = pd.DataFrame(data.groupby('Product Name').sum()['Total Sales'])
-    minimum_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().min()
-    maximum_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().max()
-    mean_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().max()
+    # minimum_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().min()
+    # maximum_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().max()
+    # mean_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().max()
     prod_sales.sort_values(by=['Total Sales'], inplace=True, ascending=False)
     top_ten_prod = prod_sales[:]
-    return {"Asset Sales":top_ten_prod.to_dict(),"Max":maximum_sales.to_dict(),"Min":minimum_sales.to_dict(),"Mean":mean_sales.to_dict()}
+    return {"Asset Sales":top_ten_prod.to_dict()}
 
 
 def topTenAssetQunatity(file_link):
