@@ -72,88 +72,124 @@ def monthvsSales(file_link):
     data = pd.DataFrame(data)
     data['Purchase Date'] = pd.to_datetime(data['Purchase Date'])
     month_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().sort_values()
+    minimum_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().min()
+    maximum_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().max()
+    mean_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().max()
     msale = pd.DataFrame(month_sales)
     cats = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
             'November', 'December']
     msale.index = pd.CategoricalIndex(msale.index, categories=cats, ordered=True)
     msale = msale.sort_index()
-    return msale.to_dict()
+    return {"data":msale.to_dict(),"min":minimum_sales,"max":maximum_sales,"mean":mean_sales}
 
 
 def topTenAssetSales(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     prod_sales = pd.DataFrame(data.groupby('Product Name').sum()['Total Sales'])
+    minimum_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().min()
+    maximum_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().max()
+    mean_sales = data.groupby(data['Purchase Date'].dt.strftime('%B'))['Total Sales'].sum().max()
     prod_sales.sort_values(by=['Total Sales'], inplace=True, ascending=False)
     top_ten_prod = prod_sales[:]
-    return top_ten_prod.to_dict()
+    return {"Asset Sales":top_ten_prod.to_dict(),"Max":maximum_sales.to_dict(),"Min":minimum_sales.to_dict(),"Mean":mean_sales.to_dict()}
 
 
 def topTenAssetQunatity(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     prod_sales = pd.DataFrame(data.groupby('Product Name').sum()['Ordered Qty'])
+    max_asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty']).max()
+    min_asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty']).min()
+    mean_asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty']).mean()
     prod_sales.sort_values(by=['Ordered Qty'], inplace=True, ascending=False)
     top_ten_prod = prod_sales[:]
-    return top_ten_prod.to_dict()
+    return {"Asset Quantity":top_ten_prod.to_dict(),"Max":max_asset.to_dict(),"Min":min_asset.to_dict(),"Mean":mean_asset.to_dict()}
 
 
 def RegionWiseQuantiy(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Region').sum()['Ordered Qty'])
-    return {"Region Asset Quantity": asset.to_dict()}
+    max_asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty']).max()
+    min_asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty']).min()
+    mean_asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty']).mean()
+    return {"Region Asset Quantity": asset.to_dict(),"Max":max_asset.to_dict(),"Min":min_asset.to_dict(),"Mean":mean_asset.to_dict()}
 
 
 def assetQuantity21(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty'])
+    max_asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty']).max()
+    min_asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty']).min()
+    mean_asset = pd.DataFrame(data.groupby('Category').sum()['Ordered Qty']).mean()
     # ab = data.groupby(data['Category'])['Ordered Qty'].sum()
     # asset.sort_values(by=['Ordered Qty'], inplace=True, ascending=False)
     # asset = asset[:10]
-    return {"Asset Quantity": asset.to_dict()}
+    return {"Asset Quantity": asset.to_dict(),"Max":max_asset.to_dict(),"Min":min_asset.to_dict(),"Mean":mean_asset.to_dict()}
 
 
 def countryWiseQuantity(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Shipping Country').sum()['Ordered Qty'])
-    return {"Country Asset Quantity": asset.to_dict()}
+    asset_max = pd.DataFrame(data.groupby('Shipping Country').sum()['Ordered Qty']).max()
+    asset_min = pd.DataFrame(data.groupby('Shipping Country').sum()['Ordered Qty']).min()
+    asset_mean = pd.DataFrame(data.groupby('Shipping Country').sum()['Ordered Qty']).mean()
+    return {"Country Asset Quantity": asset.to_dict(),"Max":asset_max.to_dict(),"Min":asset_min.to_dict(),"Mean":asset_mean.to_dict()}
 
 
 def assetWiseSale(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Category').sum()['Total Sales'])
-    return {"Asset Wise Sales": asset.to_dict()}
+    asset_max = pd.DataFrame(data.groupby('Category').sum()['Total Sales']).max()
+    asset_min = pd.DataFrame(data.groupby('Category').sum()['Total Sales']).min()
+    asset_mean = pd.DataFrame(data.groupby('Category').sum()['Total Sales']).mean()
+
+    return {"Asset Wise Sales": asset.to_dict(),"Max":asset_max.to_dict(),"Min":asset_min.to_dict(),"Mean":asset_mean.to_dict()}
 
 
 def regionWiseSale(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Region').sum()['Total Sales'])
-    return {"Region Wise Sales": asset.to_dict()}
+    asset_max = pd.DataFrame(data.groupby('Region').sum()['Total Sales']).max()
+    asset_min = pd.DataFrame(data.groupby('Region').sum()['Total Sales']).min()
+    asset_mean = pd.DataFrame(data.groupby('Region').sum()['Total Sales']).mean()
+
+    return {"Region Wise Sales": asset.to_dict(),"Max":asset_max.to_dict(),"Min":asset_min.to_dict(),"Mean":asset_mean.to_dict()}
 
 
 def countryWiseSale(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('Shipping Country').sum()['Total Sales'])
-    return {"Region Wise Sales": asset.to_dict()}
+    asset_max = pd.DataFrame(data.groupby('Region').sum()['Total Sales']).max()
+    asset_min = pd.DataFrame(data.groupby('Region').sum()['Total Sales']).min()
+    asset_mean = pd.DataFrame(data.groupby('Region').sum()['Total Sales']).mean()
+    return {"Region Wise Sales": asset.to_dict(),"Max":asset_max.to_dict(),"Min":asset_min.to_dict(),"Mean":asset_mean.to_dict()}
 
 
 def OemWiseQuantity(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('OEM').sum()['Ordered Qty'])
-    return {"OEM Wise Quantity": asset.to_dict()}
+    asset_max = pd.DataFrame(data.groupby('OEM').sum()['Ordered Qty']).max()
+    asset_min = pd.DataFrame(data.groupby('OEM').sum()['Ordered Qty']).min()
+    asset_mean = pd.DataFrame(data.groupby('OEM').sum()['Ordered Qty']).mean()
+    return {"OEM Wise Quantity": asset.to_dict(),"Max":asset_max.to_dict(),"Min":asset_min.to_dict(),"Mean":asset_mean.to_dict()}
 
 def OemWiseSale(file_link):
     data = Prediction(file_link)
     data = pd.DataFrame(data)
     asset = pd.DataFrame(data.groupby('OEM').sum()['Total Sales'])
-    return {"OEM Wise Sale": asset.to_dict()}
+    asset_max = pd.DataFrame(data.groupby('OEM').sum()['Total Sales']).max()
+    asset_min = pd.DataFrame(data.groupby('OEM').sum()['Total Sales']).min()
+    asset_mean = pd.DataFrame(data.groupby('OEM').sum()['Total Sales']).mean()
+
+    return {"OEM Wise Sale": asset.to_dict(),"Max":asset_max.to_dict(),"Min":asset_min.to_dict(),"Mean":asset_mean.to_dict()}
 
 
 @analysis.route('/file', methods=['GET', 'POST'])
@@ -174,7 +210,7 @@ def datevsale():
     if request.method == 'POST':
         link_file = (request.form['link'])
         data = monthvsSales(link_file)  # Returns Date vs Sales
-        resp = make_response(jsonify({'data': data}))
+        resp = make_response(jsonify(data))
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
 
